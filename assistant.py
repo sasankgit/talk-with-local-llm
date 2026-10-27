@@ -96,16 +96,30 @@ class Speaker:
     def _run(self):
         engine = pyttsx3.init()   # created inside the thread that uses it
         engine.setProperty("rate", 175)
+        engine.startLoop(False)
+        speaking = False
         while True:
-            text = self.q.get()
-            if text is None:
-                break
-            if text == "__flush__":
+            if not speaking:
+                try:
+                    text = self.q.get(timeout=0.01)
+                except queue.Empty:
+                    text = None
+                else:
+                    if text is None:
+                        self.q.task_done()
+                        break
+                    if text == "__flush__":
+                        self.q.task_done()
+                    else:
+                        engine.say(text)
+                        speaking = True
+
+            engine.iterate()
+            if speaking and not engine.isBusy():
                 self.q.task_done()
-                continue
-            engine.say(text)
-            engine.runAndWait()
-            self.q.task_done()
+                speaking = False
+            time.sleep(0.01)
+        engine.endLoop()
 
     def say(self, text: str):
         text = clean_for_speech(text)
