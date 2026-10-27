@@ -1,0 +1,5 @@
+faster-whisper
+sounddevice
+numpy
+pyttsx3
+llama-cpp-python
